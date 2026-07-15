@@ -1,0 +1,18 @@
+<template>
+  <h2>Student Dashboard</h2><div v-if="message" class="alert alert-info">{{message}}</div>
+  <div class="card mb-3"><div class="card-body"><h4>Profile</h4><form class="row" @submit.prevent="saveProfile"><div v-for="field in fields" :key="field.key" class="col-md-4"><label class="form-label">{{field.label}}</label><input v-model="profile[field.key]" :type="field.type||'text'" class="form-control mb-2" required></div><div class="col-12"><label class="form-label">Education</label><textarea v-model="profile.education" class="form-control mb-2"></textarea><label class="form-label">Skills</label><textarea v-model="profile.skills" class="form-control mb-2"></textarea><label class="form-label">Experience</label><textarea v-model="profile.experience" class="form-control mb-2"></textarea><button class="btn btn-secondary">Save Profile</button></div></form><div class="mt-3"><input type="file" accept="application/pdf" @change="resume=$event.target.files[0]"><button class="btn btn-outline-secondary btn-sm" @click="uploadResume">Upload PDF Resume</button></div></div></div>
+  <h4>Open Drives</h4><input v-model="search" @input="loadDrives" class="form-control mb-3" placeholder="Search company, title or skill"><div class="row g-3"><div v-for="d in drives" :key="d.id" class="col-md-6"><div class="card h-100"><div class="card-body"><h5>{{d.title}}</h5><b>{{d.company}}</b><p>{{d.description}}</p><p>Skills: {{d.required_skills}}<br>Salary: ₹{{d.salary}}<br>Deadline: {{new Date(d.deadline).toLocaleString()}}</p><div class="alert py-1" :class="d.eligible?'alert-success':'alert-warning'">{{d.eligibility_message}}</div><button class="btn btn-primary" :disabled="!d.eligible" @click="apply(d.id)">Apply</button></div></div></div></div>
+  <h4 class="mt-4">My Applications</h4><div class="table-responsive"><table class="table table-bordered"><thead><tr><th>Company</th><th>Drive</th><th>Status</th><th>Feedback / Interview</th></tr></thead><tbody><tr v-for="a in applications" :key="a.id"><td>{{a.company}}</td><td>{{a.drive}}</td><td>{{a.status}}</td><td>{{a.feedback}}<div v-if="a.interview">{{new Date(a.interview.scheduled_at).toLocaleString()}} — {{a.interview.mode}} — {{a.interview.meeting_details}}</div></td></tr></tbody></table></div>
+</template>
+<script setup>
+import { onMounted, reactive, ref } from 'vue'; import api from '../api'
+const profile=reactive({}); const drives=ref([]); const applications=ref([]); const search=ref(''); const message=ref(''); const resume=ref(null)
+const fields=[{key:'full_name',label:'Full Name'},{key:'student_code',label:'Student ID'},{key:'contact',label:'Contact'},{key:'branch',label:'Branch'},{key:'cgpa',label:'CGPA',type:'number'},{key:'graduation_year',label:'Graduation Year',type:'number'}]
+async function load(){Object.assign(profile,(await api.get('/student/profile')).data.student); await Promise.all([loadDrives(),loadApplications()])}
+async function loadDrives(){drives.value=(await api.get('/student/drives',{params:{q:search.value}})).data.drives}
+async function loadApplications(){applications.value=(await api.get('/student/applications')).data.applications}
+async function saveProfile(){message.value=(await api.patch('/student/profile',profile)).data.message||'Profile saved'; await loadDrives()}
+async function uploadResume(){if(!resume.value)return; const data=new FormData(); data.append('resume',resume.value); message.value=(await api.post('/student/profile/resume',data)).data.message}
+async function apply(id){try{message.value=(await api.post(`/student/drives/${id}/apply`)).data.message; await loadApplications()}catch(e){message.value=e.response?.data?.message||'Could not apply'}}
+onMounted(load)
+</script>
