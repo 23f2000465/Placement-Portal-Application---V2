@@ -1,7 +1,7 @@
 from datetime import datetime
 from pathlib import Path
 
-from flask import Blueprint, current_app, jsonify, request
+from flask import Blueprint, Response, current_app, jsonify, request
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from werkzeug.utils import secure_filename
@@ -107,3 +107,20 @@ def apply(user, drive_id):
 def applications(user):
     rows = Application.query.filter_by(student_id=user.student.id).order_by(Application.applied_at.desc()).all()
     return jsonify(applications=[application_json(item) for item in rows])
+
+
+@student_bp.get("/placements")
+@role_required("Student")
+def placements(user):
+    rows = [{"id": item.id, "company": item.company.name, "position": item.position, "salary": item.salary, "joining_date": item.joining_date.isoformat() if item.joining_date else None, "status": item.application.status} for item in user.student.placements]
+    return jsonify(placements=rows)
+
+
+@student_bp.get("/placements/<int:placement_id>/confirmation")
+@role_required("Student")
+def placement_confirmation(user, placement_id):
+    placement = next((item for item in user.student.placements if item.id == placement_id), None)
+    if not placement:
+        return jsonify(message="Placement record not found"), 404
+    text = f"PLACEMENT CONFIRMATION\n\nStudent: {user.student.full_name}\nStudent ID: {user.student.student_code}\nCompany: {placement.company.name}\nPosition: {placement.position}\nSalary: {placement.salary}\nStatus: {placement.application.status}\n"
+    return Response(text, mimetype="text/plain", headers={"Content-Disposition": f"attachment; filename=placement_{placement.id}.txt"})

@@ -1,10 +1,10 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from flask import Blueprint, jsonify, request
 
 from auth import role_required
 from extensions import db
-from models import Application, Drive, Interview
+from models import Application, Drive, Interview, Placement
 
 
 company_bp = Blueprint("company", __name__, url_prefix="/api/company")
@@ -125,6 +125,19 @@ def application_status(user, application_id):
         return jsonify(message="Invalid application status"), 400
     application.status = status
     application.feedback = data.get("feedback", application.feedback).strip()
+    if status in ["Selected", "Placed"] and not application.placement:
+        joining_date = None
+        if data.get("joining_date"):
+            try:
+                joining_date = date.fromisoformat(data["joining_date"])
+            except ValueError:
+                return jsonify(message="Joining date is invalid"), 400
+        placement = Placement(
+            application_id=application.id, student_id=application.student_id,
+            company_id=application.drive.company_id, position=application.drive.title,
+            salary=application.drive.salary, joining_date=joining_date,
+        )
+        db.session.add(placement)
     db.session.commit()
     return jsonify(message="Application updated")
 
