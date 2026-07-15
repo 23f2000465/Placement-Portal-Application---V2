@@ -43,6 +43,7 @@ erDiagram
 - [Milestone 1 - Database Models and Schema](docs/milestone-1.md)
 - [Milestone 2 - Authentication and RBAC](docs/milestone-2.md)
 - [Milestone 3 - Admin Dashboard and Management](docs/milestone-3.md)
+- [Milestone 4 - Company Dashboard and Job Management](docs/milestone-4.md)
 
 ## Student Details
 
