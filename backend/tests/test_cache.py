@@ -18,7 +18,7 @@ class FakeRedis:
 class CacheTests(unittest.TestCase):
     def test_set_get_expiry_call_and_prefix_clear(self):
         old=cache.redis_client; cache.redis_client=FakeRedis()
-        app=create_app({'TESTING':True,'CACHE_SECONDS':300})
+        app=create_app({'TESTING':True,'CACHE_SECONDS':300,'CACHE_ENABLED':True})
         with app.app_context():
             cache.set_cache('student:drives:1',{'count':2})
             self.assertEqual(cache.get_cache('student:drives:1')['count'],2)

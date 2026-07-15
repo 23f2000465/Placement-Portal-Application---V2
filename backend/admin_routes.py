@@ -31,6 +31,8 @@ def dashboard(user):
     data = dict(
         students=Student.query.count(), companies=Company.query.count(),
         drives=Drive.query.count(), applications=Application.query.count(),
+        shortlisted=Application.query.filter_by(status="Shortlisted").count(),
+        selected_placed=Application.query.filter(Application.status.in_(["Selected", "Placed"])).count(),
     )
     set_cache("admin:dashboard", data)
     return jsonify(data)
@@ -96,7 +98,11 @@ def user_active(user, user_id):
 @admin_bp.get("/drives")
 @role_required("Admin")
 def drives(user):
-    return jsonify(drives=[drive_json(item) for item in Drive.query.order_by(Drive.created_at.desc()).all()])
+    search = request.args.get("q", "").strip()
+    query = Drive.query.join(Company)
+    if search:
+        query = query.filter(or_(Drive.title.ilike(f"%{search}%"), Company.name.ilike(f"%{search}%")))
+    return jsonify(drives=[drive_json(item) for item in query.order_by(Drive.created_at.desc()).all()])
 
 
 @admin_bp.patch("/drives/<int:drive_id>/status")

@@ -9,15 +9,17 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import api from './api'
 
 const router = useRouter()
-const user = computed(() => localStorage.getItem('user'))
+const user = ref(localStorage.getItem('user'))
+router.afterEach(() => { user.value = localStorage.getItem('user') })
 async function logout() {
   await api.post('/auth/logout')
   localStorage.removeItem('user')
+  user.value = null
   router.push('/')
 }
 </script>

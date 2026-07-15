@@ -16,6 +16,8 @@ def client():
 
 
 def get_cache(key):
+    if not current_app.config.get("CACHE_ENABLED", True):
+        return None
     try:
         value = client().get(f"ppa:{key}")
         return json.loads(value) if value else None
@@ -24,6 +26,8 @@ def get_cache(key):
 
 
 def set_cache(key, value):
+    if not current_app.config.get("CACHE_ENABLED", True):
+        return
     try:
         client().setex(f"ppa:{key}", current_app.config["CACHE_SECONDS"], json.dumps(value))
     except RedisError:
@@ -31,6 +35,8 @@ def set_cache(key, value):
 
 
 def clear_cache(*prefixes):
+    if not current_app.config.get("CACHE_ENABLED", True):
+        return
     try:
         for prefix in prefixes:
             keys = list(client().scan_iter(f"ppa:{prefix}*"))

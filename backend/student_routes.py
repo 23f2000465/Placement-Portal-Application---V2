@@ -54,7 +54,12 @@ def profile(user):
             if not 0 <= student.cgpa <= 10: raise ValueError
         except (ValueError, TypeError):
             return jsonify(message="CGPA or graduation year is invalid"), 400
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            return jsonify(message="Student ID already exists"), 409
+        clear_cache("admin:", f"student:drives:{student.id}")
     return jsonify(student={"full_name": student.full_name, "student_code": student.student_code, "contact": student.contact, "branch": student.branch, "cgpa": student.cgpa, "graduation_year": student.graduation_year, "education": student.education, "skills": student.skills, "experience": student.experience, "resume_path": student.resume_path})
 
 

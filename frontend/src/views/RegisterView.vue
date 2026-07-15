@@ -7,7 +7,7 @@
         <div class="col-md-6"><label class="form-label">Email</label><input v-model="form.email" type="email" class="form-control mb-2" required></div>
         <div class="col-md-6"><label class="form-label">Password</label><input v-model="form.password" type="password" minlength="6" class="form-control mb-2" required></div>
         <template v-if="role === 'student'">
-          <div class="col-md-6" v-for="field in studentFields" :key="field.key"><label class="form-label">{{ field.label }}</label><input v-model="form[field.key]" :type="field.type || 'text'" class="form-control mb-2" required></div>
+          <div class="col-md-6" v-for="field in studentFields" :key="field.key"><label class="form-label">{{ field.label }}</label><input v-model="form[field.key]" :type="field.type || 'text'" :step="field.type==='number'?'any':undefined" class="form-control mb-2" required></div>
         </template>
         <template v-else>
           <div class="col-md-6" v-for="field in companyFields" :key="field.key"><label class="form-label">{{ field.label }}</label><input v-model="form[field.key]" class="form-control mb-2" :required="field.key !== 'website'"></div>

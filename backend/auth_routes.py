@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request, session
 from sqlalchemy.exc import IntegrityError
 
 from auth import role_required
+from cache import clear_cache
 from extensions import db
 from models import Company, Student, User
 
@@ -48,6 +49,7 @@ def register_student():
     except IntegrityError:
         db.session.rollback()
         return jsonify(message="Email or student ID already exists"), 409
+    clear_cache("admin:")
     return jsonify(message="Student registered successfully"), 201
 
 
@@ -74,6 +76,7 @@ def register_company():
     except IntegrityError:
         db.session.rollback()
         return jsonify(message="Email already exists"), 409
+    clear_cache("admin:")
     return jsonify(message="Company registered; admin approval is pending"), 201
 
 

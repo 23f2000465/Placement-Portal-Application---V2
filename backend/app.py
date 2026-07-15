@@ -10,6 +10,8 @@ def create_app(test_config=None):
 
     if test_config:
         app.config.update(test_config)
+    if app.config.get("TESTING") and "CACHE_ENABLED" not in (test_config or {}):
+        app.config["CACHE_ENABLED"] = False
 
     db.init_app(app)
 

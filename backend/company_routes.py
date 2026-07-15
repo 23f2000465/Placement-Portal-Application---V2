@@ -55,6 +55,7 @@ def profile(user):
         if not all([company.name, company.industry, company.location, company.hr_contact]):
             return jsonify(message="Name, industry, location and HR contact are required"), 400
         db.session.commit()
+        clear_cache("admin:", "company:")
     return jsonify(company={"name": company.name, "industry": company.industry, "location": company.location, "hr_contact": company.hr_contact, "website": company.website, "approval_status": company.approval_status})
 
 
@@ -118,7 +119,7 @@ def applicants(user, drive_id):
     rows = []
     for item in drive.applications:
         student = item.student
-        rows.append({"application_id": item.id, "status": item.status, "feedback": item.feedback, "student": {"name": student.full_name, "student_code": student.student_code, "contact": student.contact, "branch": student.branch, "cgpa": student.cgpa, "skills": student.skills, "education": student.education, "experience": student.experience}, "interview": {"scheduled_at": item.interview.scheduled_at.isoformat(), "mode": item.interview.mode, "meeting_details": item.interview.meeting_details, "notes": item.interview.notes} if item.interview else None})
+        rows.append({"application_id": item.id, "status": item.status, "feedback": item.feedback, "student": {"name": student.full_name, "student_code": student.student_code, "contact": student.contact, "branch": student.branch, "cgpa": student.cgpa, "skills": student.skills, "education": student.education, "experience": student.experience, "resume_path": student.resume_path}, "interview": {"scheduled_at": item.interview.scheduled_at.isoformat(), "mode": item.interview.mode, "meeting_details": item.interview.meeting_details, "notes": item.interview.notes} if item.interview else None})
     return jsonify(applicants=rows)
 
 
