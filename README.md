@@ -23,6 +23,25 @@ Student
 
 Milestone 0: GitHub repository setup completed.
 
+## Database ER Diagram
+
+```mermaid
+erDiagram
+    USER ||--o| COMPANY : has
+    USER ||--o| STUDENT : has
+    COMPANY ||--o{ DRIVE : creates
+    STUDENT ||--o{ APPLICATION : submits
+    DRIVE ||--o{ APPLICATION : receives
+    APPLICATION ||--o| INTERVIEW : schedules
+    APPLICATION ||--o| PLACEMENT : produces
+    STUDENT ||--o{ PLACEMENT : receives
+    COMPANY ||--o{ PLACEMENT : offers
+```
+
+## Milestone Notes
+
+- [Milestone 1 - Database Models and Schema](docs/milestone-1.md)
+
 ## Student Details
 
 - Student ID: 23f2000465

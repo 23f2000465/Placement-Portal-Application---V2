@@ -40,3 +40,11 @@ yarn-error.log*
 # Logs and temporary files
 *.log
 *.tmp
+
+# Tests and generated project files
+.pytest_cache/
+.coverage
+backend/uploads/
+backend/exports/
+backend/reports/
+celerybeat-schedule.*
