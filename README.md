@@ -47,6 +47,7 @@ erDiagram
 - [Milestone 5 - Student Dashboard and Applications](docs/milestone-5.md)
 - [Milestone 6 - History and Status Tracking](docs/milestone-6.md)
 - [Milestone 7 - Celery Jobs and CSV Export](docs/milestone-7.md)
+- [Milestone 8 - Redis Caching](docs/milestone-8.md)
 
 ## Student Details
 

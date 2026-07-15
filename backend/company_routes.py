@@ -3,6 +3,7 @@ from datetime import date, datetime
 from flask import Blueprint, jsonify, request
 
 from auth import role_required
+from cache import clear_cache, get_cache, set_cache
 from extensions import db
 from models import Application, Drive, Interview, Placement
 
@@ -29,11 +30,17 @@ def drive_json(drive):
 @company_bp.get("/dashboard")
 @role_required("Company")
 def dashboard(user):
+    key = f"company:dashboard:{user.company.id}"
+    cached = get_cache(key)
+    if cached:
+        return jsonify(cached)
     applications = Application.query.join(Drive).filter(Drive.company_id == user.company.id)
-    return jsonify(
+    data = dict(
         approval_status=user.company.approval_status, drives=len(user.company.drives),
         applicants=applications.count(), selected=applications.filter(Application.status.in_(["Shortlisted", "Selected", "Placed"])).count(),
     )
+    set_cache(key, data)
+    return jsonify(data)
 
 
 @company_bp.route("/profile", methods=["GET", "PATCH"])
@@ -74,6 +81,7 @@ def drives(user):
     except (ValueError, TypeError):
         return jsonify(message="Salary, CGPA, year or deadline is invalid"), 400
     db.session.add(drive); db.session.commit()
+    clear_cache("admin:", "student:drives", "company:")
     return jsonify(message="Drive created and sent for admin approval", drive=drive_json(drive)), 201
 
 
@@ -86,7 +94,7 @@ def update_drive(user, drive_id):
     if request.method == "DELETE":
         if drive.applications:
             return jsonify(message="Drive with applications cannot be deleted; close it instead"), 409
-        db.session.delete(drive); db.session.commit()
+        db.session.delete(drive); db.session.commit(); clear_cache("admin:", "student:drives", "company:")
         return jsonify(message="Drive deleted")
     data = request.get_json() or {}
     if data.get("status") in ["Active", "Closed"]:
@@ -97,6 +105,7 @@ def update_drive(user, drive_id):
         if field in data:
             setattr(drive, field, str(data[field]).strip())
     db.session.commit()
+    clear_cache("admin:", "student:drives", "company:")
     return jsonify(message="Drive updated", drive=drive_json(drive))
 
 
@@ -139,6 +148,7 @@ def application_status(user, application_id):
         )
         db.session.add(placement)
     db.session.commit()
+    clear_cache("admin:", "company:")
     return jsonify(message="Application updated")
 
 
@@ -162,4 +172,5 @@ def schedule_interview(user, application_id):
     interview.notes = data.get("notes", "").strip()
     application.status = "Interview"
     db.session.add(interview); db.session.commit()
+    clear_cache("admin:", "company:")
     return jsonify(message="Interview scheduled")

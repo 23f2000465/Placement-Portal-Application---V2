@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.utils import secure_filename
 
 from auth import role_required
+from cache import clear_cache, get_cache, set_cache
 from extensions import db
 from models import Application, Company, Drive, ExportJob
 
@@ -76,10 +77,16 @@ def upload_resume(user):
 @role_required("Student")
 def drives(user):
     search = request.args.get("q", "").strip()
+    key = f"student:drives:{user.student.id}:{search.lower()}"
+    cached = get_cache(key)
+    if cached:
+        return jsonify(drives=cached)
     query = Drive.query.join(Company).filter(Drive.status.in_(["Approved", "Active"]), Drive.application_deadline >= datetime.now())
     if search:
         query = query.filter(or_(Company.name.ilike(f"%{search}%"), Drive.title.ilike(f"%{search}%"), Drive.required_skills.ilike(f"%{search}%")))
-    return jsonify(drives=[drive_json(item, user.student) for item in query.order_by(Drive.application_deadline).all()])
+    rows = [drive_json(item, user.student) for item in query.order_by(Drive.application_deadline).all()]
+    set_cache(key, rows)
+    return jsonify(drives=rows)
 
 
 @student_bp.post("/drives/<int:drive_id>/apply")
@@ -99,6 +106,7 @@ def apply(user, drive_id):
     except IntegrityError:
         db.session.rollback()
         return jsonify(message="You have already applied to this drive"), 409
+    clear_cache("admin:", "company:")
     return jsonify(message="Application submitted", application=application_json(application)), 201
 
 
