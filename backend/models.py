@@ -58,6 +58,7 @@ class Student(db.Model):
     user = db.relationship("User", back_populates="student")
     applications = db.relationship("Application", back_populates="student", cascade="all, delete-orphan")
     placements = db.relationship("Placement", back_populates="student")
+    export_jobs = db.relationship("ExportJob", back_populates="student")
 
 
 class Drive(db.Model):
@@ -122,3 +123,13 @@ class Placement(db.Model):
     application = db.relationship("Application", back_populates="placement")
     student = db.relationship("Student", back_populates="placements")
     company = db.relationship("Company")
+
+
+class ExportJob(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey("student.id"), nullable=False)
+    status = db.Column(db.String(20), default="Pending", nullable=False)
+    filename = db.Column(db.String(250))
+    created_at = db.Column(db.DateTime(timezone=True), default=current_time)
+
+    student = db.relationship("Student", back_populates="export_jobs")

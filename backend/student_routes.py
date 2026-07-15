@@ -1,14 +1,14 @@
 from datetime import datetime
 from pathlib import Path
 
-from flask import Blueprint, Response, current_app, jsonify, request
+from flask import Blueprint, Response, current_app, jsonify, request, send_from_directory
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from werkzeug.utils import secure_filename
 
 from auth import role_required
 from extensions import db
-from models import Application, Company, Drive
+from models import Application, Company, Drive, ExportJob
 
 
 student_bp = Blueprint("student", __name__, url_prefix="/api/student")
@@ -124,3 +124,35 @@ def placement_confirmation(user, placement_id):
         return jsonify(message="Placement record not found"), 404
     text = f"PLACEMENT CONFIRMATION\n\nStudent: {user.student.full_name}\nStudent ID: {user.student.student_code}\nCompany: {placement.company.name}\nPosition: {placement.position}\nSalary: {placement.salary}\nStatus: {placement.application.status}\n"
     return Response(text, mimetype="text/plain", headers={"Content-Disposition": f"attachment; filename=placement_{placement.id}.txt"})
+
+
+@student_bp.post("/exports")
+@role_required("Student")
+def start_export(user):
+    job = ExportJob(student_id=user.student.id)
+    db.session.add(job); db.session.commit()
+    if current_app.config.get("TESTING"):
+        from tasks import create_export
+        create_export(user.student.id, job.id)
+    else:
+        from tasks import export_student_history
+        export_student_history.delay(user.student.id, job.id)
+    return jsonify(message="CSV export started", job_id=job.id), 202
+
+
+@student_bp.get("/exports/<int:job_id>")
+@role_required("Student")
+def export_status(user, job_id):
+    job = db.get_or_404(ExportJob, job_id)
+    if job.student_id != user.student.id:
+        return jsonify(message="Export not found"), 404
+    return jsonify(id=job.id, status=job.status, filename=job.filename)
+
+
+@student_bp.get("/exports/<int:job_id>/download")
+@role_required("Student")
+def download_export(user, job_id):
+    job = db.get_or_404(ExportJob, job_id)
+    if job.student_id != user.student.id or job.status != "Completed":
+        return jsonify(message="Export is not ready"), 404
+    return send_from_directory(Path(current_app.root_path) / "exports", job.filename, as_attachment=True)
