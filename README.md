@@ -41,6 +41,7 @@ erDiagram
 ## Milestone Notes
 
 - [Milestone 1 - Database Models and Schema](docs/milestone-1.md)
+- [Milestone 2 - Authentication and RBAC](docs/milestone-2.md)
 
 ## Student Details
 

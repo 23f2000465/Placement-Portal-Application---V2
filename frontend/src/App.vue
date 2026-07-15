@@ -1,6 +1,23 @@
 <template>
-  <main>
-    <h1>Placement Portal Application V2</h1>
-    <p>Frontend setup is ready.</p>
-  </main>
+  <nav class="navbar navbar-dark bg-dark">
+    <div class="container">
+      <RouterLink class="navbar-brand" to="/">Placement Portal</RouterLink>
+      <button v-if="user" class="btn btn-outline-light btn-sm" @click="logout">Logout</button>
+    </div>
+  </nav>
+  <main class="container py-4"><RouterView /></main>
 </template>
+
+<script setup>
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
+import api from './api'
+
+const router = useRouter()
+const user = computed(() => localStorage.getItem('user'))
+async function logout() {
+  await api.post('/auth/logout')
+  localStorage.removeItem('user')
+  router.push('/')
+}
+</script>
